@@ -4,3 +4,6 @@
 .vscode/launch.json
 .vscode/ipch
 venv
+src/credentials.h
+turbidity_data.db
+data/crud.py
