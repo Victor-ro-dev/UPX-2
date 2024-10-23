@@ -6,5 +6,3 @@
 venv
 turbidity_data.db
 data/crud.py
-platformio.ini
-src/credentials.h
