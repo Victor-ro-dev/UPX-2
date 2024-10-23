@@ -3,17 +3,24 @@
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
+#include <time.h>
 #include "credentials.h"
 
-unsigned long previoustime = 0;
+const int sensor = 35;
+int analogic;
+float voltage = 0.0;
+float NTU = 0;
+const long gmtOffset_sec = -10800;
 
 void setup()
 {
   Serial.begin(115200);
+  pinMode(sensor, INPUT);
   delay(100);
+
   Serial.println("Booting ESP32-1- OTA");
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password); // make sure to enter your wifi credentials on "credential.h"
+  WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED)
   {
     Serial.println("Connection Failed! Rebooting...");
@@ -32,7 +39,6 @@ void setup()
       else // U_SPIFFS
         type = "filesystem";
 
-      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
       Serial.println("Start updating " + type); })
       .onEnd([]()
              { Serial.println("\nEnd"); })
@@ -49,6 +55,9 @@ void setup()
 
   ArduinoOTA.begin();
 
+  configTime(gmtOffset_sec, 0, "pool.ntp.org", "time.nist.gov");
+  delay(2000);
+
   Serial.println("Ready");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
@@ -58,12 +67,25 @@ void loop()
 {
   ArduinoOTA.handle();
 
-  long currenttime = millis();
-  if (currenttime - previoustime >= 5000)
-  { // Print only every 5seconds
-    previoustime = currenttime;
-    Serial.print("This is ESP32-1 updated , ");
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
+  analogic = analogRead(sensor);
+  voltage = analogic * (3.3 / 4095.0);
+
+  NTU = map(voltage * 1000, 1000, 1530, 200, 0);
+  NTU = constrain(NTU, 0, 1000);
+
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo))
+  {
+    Serial.println("Falha ao obter a data");
+    return;
   }
+
+  char dateString[11];
+  strftime(dateString, sizeof(dateString), "%d/%m/%Y", &timeinfo);
+
+  Serial.print(dateString);
+  Serial.print(", ");
+  Serial.println(NTU);
+
+  delay(10000);
 }
