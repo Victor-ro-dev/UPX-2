@@ -5,6 +5,9 @@
 #include <ArduinoOTA.h>
 #include <time.h>
 #include "credentials.h"
+#include <WebServer.h>
+
+WebServer server(80);
 
 const int sensor = 35;
 int analogic;
@@ -55,17 +58,24 @@ void setup()
 
   ArduinoOTA.begin();
 
-  configTime(gmtOffset_sec, 0, "pool.ntp.org", "time.nist.gov");
-  delay(2000);
+    server.on("/", []() {
+        server.send(200, "text/plain", String(NTU));
+    });
+    server.begin();
+    Serial.println("Servidor HTTP iniciado");
 
-  Serial.println("Ready");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  // configTime(gmtOffset_sec, 0, "pool.ntp.org", "time.nist.gov");
+  // delay(2000);
+
+  // Serial.println("Ready");
+  // Serial.print("IP address: ");
+  // Serial.println(WiFi.localIP());
 }
 
 void loop()
 {
   ArduinoOTA.handle();
+  server.handleClient();
 
   analogic = analogRead(sensor);
   voltage = analogic * (3.3 / 4095.0);
@@ -73,19 +83,21 @@ void loop()
   NTU = map(voltage * 1000, 1000, 1530, 200, 0);
   NTU = constrain(NTU, 0, 1000);
 
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo))
-  {
-    Serial.println("Falha ao obter a data");
-    return;
-  }
+  //Usar caso a conexão com a bateria não funcione!
 
-  char dateString[11];
-  strftime(dateString, sizeof(dateString), "%d/%m/%Y", &timeinfo);
+  // struct tm timeinfo;
+  // if (!getLocalTime(&timeinfo))
+  // {
+  //   Serial.println("Falha ao obter a data");
+  //   return;
+  // }
 
-  Serial.print(dateString);
-  Serial.print(", ");
-  Serial.println(NTU);
+  // char dateString[11];
+  // strftime(dateString, sizeof(dateString), "%d/%m/%Y", &timeinfo);
+
+  // Serial.print(dateString);
+  // Serial.print(", ");
+  // Serial.println(NTU);
 
   delay(10000);
 }
