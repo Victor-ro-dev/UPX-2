@@ -9,7 +9,7 @@ class TurbidityApp(ctk.CTk):
         super().__init__()
 
         self.title("Monitor de Turbidez")
-        self.geometry("800x800") 
+        self.geometry("800x700") 
 
         ctk.set_appearance_mode("light")  
 
@@ -37,7 +37,7 @@ class TurbidityApp(ctk.CTk):
 
         if rows:
             datas, valores = zip(*rows)
-            datas = [datetime.strptime(data, "%Y-%m-%d") for data in datas]
+            datas = [datetime.strptime(data, "%d/%m/%Y") for data in datas]
 
             self.plot_data(datas, valores)
         else:
