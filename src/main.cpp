@@ -2,7 +2,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoOTA.h>
-#include "credentials.h"
 
 WebServer server(80);
 
@@ -11,29 +10,19 @@ int analogic;
 float voltage = 0.0;
 float NTU = 0;
 
-IPAddress local_IP();
-IPAddress gateway();
-IPAddress subnet();
-IPAddress primaryDNS();
-
 void setup() {
   Serial.begin(115200);
   pinMode(sensor, INPUT);
   delay(100);
 
-  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS)) {
-    Serial.println("Configuração do IP estático falhou");
-  }
+  // Set up the ESP32 as an access point
+  const char *ssid = "ESP32_AP";
+  const char *password = "12345678";
+  WiFi.softAP(ssid, password);
 
-  Serial.println("Conectando ao Wi-Fi...");
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nWiFi conectado");
-  Serial.print("Endereço IP: ");
-  Serial.println(WiFi.localIP());
+  IPAddress IP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(IP);
 
   // Configuração OTA
   ArduinoOTA.setHostname("esp32dev");  // Define o hostname para OTA

@@ -1,2 +1,2 @@
-const char* ssid = ""; // Nome da rede
-const char* password = ""; // Senha da rede
+const char* ssid = "iPhone"; // Nome da rede
+const char* password = "marioneto"; // Senha da rede

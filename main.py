@@ -3,63 +3,75 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import sqlite3
 from datetime import datetime
+from db_config import DB_PATH, TABLE_NAME
+
 
 class TurbidityApp(ctk.CTk):
     def __init__(self):
-        super().__init__()
+        super().__init__()  # Call parent class constructor
+        
+        self.title("Monitoramento de Turbidez")
+        self.geometry("800x600")
 
-        self.title("Monitor de Turbidez")
-        self.geometry("800x700") 
-
-        ctk.set_appearance_mode("light")  
-
-        self.__label_titulo = ctk.CTkLabel(self, text='Monitoramento do Fotobiorreator', font=('Open Sans', 20))
-        self.__label_titulo.pack(pady=20)
-
-        self.__load_button = ctk.CTkButton(self, text="Carregar Dados", command=self.carregar_dados)
+        # Load button
+        self.__load_button = ctk.CTkButton(
+            self, 
+            text="Carregar Dados", 
+            command=self.carregar_dados  # Method binding is correct now
+        )
         self.__load_button.pack(pady=10)
 
-        self.__calc_co2_window_button = ctk.CTkButton(self, text="Abrir Calculadora de CO2", command=self.abrir_janela_calculo_co2)
+        # CO2 calculator button
+        self.__calc_co2_window_button = ctk.CTkButton(
+            self, 
+            text="Abrir Calculadora de CO2", 
+            command=self.abrir_janela_calculo_co2
+        )
         self.__calc_co2_window_button.pack(pady=10)
 
+        # Graph area
         self.__grafico_area = ctk.CTkFrame(self)
         self.__grafico_area.pack(pady=20, fill="both", expand=True)
 
-    def carregar_dados(self) -> None:
-        conn = sqlite3.connect('turbidity_data.db')
-        cursor = conn.cursor()
+    def carregar_dados(self):  # Changed to instance method
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
 
-        cursor.execute('SELECT date, turbidity FROM turbidity_data')
-        rows = cursor.fetchall()
+            cursor.execute(f'SELECT date, turbidity FROM {TABLE_NAME}')
+            rows = cursor.fetchall()
 
-        cursor.close()
-        conn.close()
+            if rows:
+                datas, valores = zip(*rows)
+                datas = [datetime.strptime(data, "%d/%m/%Y") for data in datas]
+                self.plot_data(datas, valores)
+            else:
+                print("Nenhum dado encontrado no banco de dados.")
 
-        if rows:
-            datas, valores = zip(*rows)
-            datas = [datetime.strptime(data, "%d/%m/%Y") for data in datas]
+        except sqlite3.Error as e:
+            print(f"Erro ao carregar dados: {e}")
+        finally:
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conn' in locals():
+                conn.close()
 
-            self.plot_data(datas, valores)
-        else:
-            print("Nenhum dado encontrado no banco de dados.")
-
-    def plot_data(self, datas, valores) -> None:
+    def plot_data(self, datas, valores):
+        # Clear previous plot
         for widget in self.__grafico_area.winfo_children():
             widget.destroy()
 
-        fig, ax = plt.subplots()
-
-        ax.plot(datas, valores, marker='o', color='forestgreen', markersize=8, markerfacecolor='lightgreen', markeredgecolor='darkgreen')
-        ax.set_title("Nível de Turbidez ao Longo do Tempo", fontsize=14, fontweight='bold', color='darkgreen')
-        ax.set_xlabel("Tempo", fontsize=14, color='orange')
-        ax.set_ylabel("Turbidez (NTU)", fontsize=14, color='orange')
-        ax.grid(True)
-
-        fig.autofmt_xdate()
-
+        # Create new plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(datas, valores)
+        ax.set_xlabel('Data')
+        ax.set_ylabel('Turbidez (NTU)')
+        ax.set_title('Histórico de Turbidez')
+        
         canvas = FigureCanvasTkAgg(fig, master=self.__grafico_area)
         canvas.draw()
-        canvas.get_tk_widget().pack(fill="both", expand=True)
+        canvas.get_tk_widget().pack(fill='both', expand=True)
+
 
     def abrir_janela_calculo_co2(self):
         self.__janela_calculo = ctk.CTkToplevel(self)
@@ -97,4 +109,7 @@ class TurbidityApp(ctk.CTk):
         co2_sequestrado = (biomassa * 44) / 12  
         return co2_sequestrado
 
-TurbidityApp().mainloop()
+
+if __name__ == "__main__":
+    app = TurbidityApp()
+    app.mainloop()

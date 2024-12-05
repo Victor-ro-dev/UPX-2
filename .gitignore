@@ -4,5 +4,4 @@
 .vscode/launch.json
 .vscode/ipch
 venv
-turbidity_data.db
 data/crud.py
