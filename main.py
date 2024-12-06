@@ -63,15 +63,28 @@ class TurbidityApp(ctk.CTk):
 
         # Create new plot
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(datas, valores)
+
+        # Plot the data
+        ax.plot(datas, valores, marker='o', linestyle='-', color='b')
+
+        # Configure x-axis with proper scaling
+        ax.set_xlim([min(datas), max(datas)])
+        ax.set_xticks(datas)  # Show each date as a tick
+        ax.xaxis.set_major_formatter(plt.FixedFormatter([d.strftime("%d/%m/%Y") for d in datas]))
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha="right")
+
+        # Set labels and title
         ax.set_xlabel('Data')
         ax.set_ylabel('Turbidez (NTU)')
         ax.set_title('Histórico de Turbidez')
-        
+
+        # Add grid for better readability
+        ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+
+        # Add plot to Tkinter frame
         canvas = FigureCanvasTkAgg(fig, master=self.__grafico_area)
         canvas.draw()
         canvas.get_tk_widget().pack(fill='both', expand=True)
-
 
     def abrir_janela_calculo_co2(self):
         self.__janela_calculo = ctk.CTkToplevel(self)
